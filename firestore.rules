@@ -30,6 +30,17 @@ service cloud.firestore {
     //   - status: string (required, 'approved' or 'cancelled')
     //   - createdAt: string (required, ISO 8601)
     //
+    // Collection: roomDetails
+    // Document ID: roomId
+    // Fields:
+    //   - id: string (required)
+    //   - bannerUrl: string (optional)
+    //   - title: string (required)
+    //   - subtitle: string (required)
+    //   - description: string (required)
+    //   - facilities: list (required)
+    //   - gallery: list (required)
+    //
     // ===============================================================
 
     // ===============================================================
@@ -73,6 +84,16 @@ service cloud.firestore {
              data.createdAt is string;
     }
 
+    function isValidRoomDetails(data) {
+      return data.keys().hasAll(['id', 'title', 'subtitle', 'description', 'facilities', 'gallery']) &&
+             data.id is string &&
+             data.title is string && data.title.size() < 200 &&
+             data.subtitle is string && data.subtitle.size() < 500 &&
+             data.description is string && data.description.size() < 5000 &&
+             data.facilities is list &&
+             data.gallery is list;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -89,6 +110,11 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isValidBooking(request.resource.data);
       allow update: if isAuthenticated() && (isAdmin() || (request.auth.uid == resource.data.userId && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])));
       allow delete: if isAdmin();
+    }
+
+    match /roomDetails/{roomId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidRoomDetails(request.resource.data);
     }
 
     match /staff/{staffId} {

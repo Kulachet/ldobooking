@@ -30,3 +30,20 @@ export interface Room {
   name: string;
   capacity: number;
 }
+
+export interface Facility {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string;
+}
+
+export interface RoomDetails {
+  id: string; // matches room id
+  bannerUrl: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  facilities: Facility[];
+  gallery: string[];
+}

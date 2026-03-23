@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -19,12 +19,21 @@ import {
   ShieldCheck,
   Search,
   Trash2,
-  Upload
+  Upload,
+  Image as ImageIcon,
+  Info,
+  Monitor,
+  Video,
+  Maximize,
+  Edit3,
+  Save,
+  PlusCircle,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { authService, dbService, MOCK_ROOMS } from './services/mockApi';
-import { Booking, User, Room } from './types';
+import { Booking, User, Room, RoomDetails, Facility } from './types';
 
 // --- Components ---
 
@@ -86,7 +95,7 @@ const Modal = ({ isOpen, onClose, title, children }: any) => {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'calendar' | 'admin' | 'my-bookings'>('calendar');
+  const [view, setView] = useState<'calendar' | 'admin' | 'my-bookings' | 'facilities'>('calendar');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
@@ -366,6 +375,12 @@ export default function App() {
               ปฏิทิน
             </button>
             <button 
+              onClick={() => setView('facilities')}
+              className={`px-4 sm:px-8 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${view === 'facilities' ? 'bg-white shadow-md text-brand-600' : 'text-surface-500 hover:text-surface-700'}`}
+            >
+              ข้อมูลห้องประชุม
+            </button>
+            <button 
               onClick={() => setView('my-bookings')}
               className={`px-4 sm:px-8 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${view === 'my-bookings' ? 'bg-white shadow-md text-brand-600' : 'text-surface-500 hover:text-surface-700'}`}
             >
@@ -412,6 +427,8 @@ export default function App() {
             bookings={bookings}
             onSlotClick={openBookingModal}
           />
+        ) : view === 'facilities' ? (
+          <FacilitiesView roomId={MOCK_ROOMS[0].id} />
         ) : view === 'my-bookings' ? (
           <MyBookingsView bookings={bookings} currentUser={user} />
         ) : (
@@ -1155,7 +1172,7 @@ function StaffDatabaseView() {
 }
 
 function AdminDashboard({ bookings }: any) {
-  const [activeTab, setActiveTab] = useState<'bookings' | 'users' | 'staff'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'users' | 'staff' | 'facilities'>('bookings');
   
   // Calculate current academic year (Aug - Jul)
   const now = new Date();
@@ -1249,6 +1266,13 @@ function AdminDashboard({ bookings }: any) {
           >
             <CalendarIcon size={14} className="sm:w-4 sm:h-4" />
             รายการจอง
+          </button>
+          <button 
+            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'facilities' ? 'bg-white text-brand-600 shadow-sm' : 'text-surface-500 hover:text-surface-700'}`}
+            onClick={() => setActiveTab('facilities')}
+          >
+            <Monitor size={14} className="sm:w-4 sm:h-4" />
+            ข้อมูลห้อง
           </button>
           <button 
             className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'users' ? 'bg-white text-brand-600 shadow-sm' : 'text-surface-500 hover:text-surface-700'}`}
@@ -1455,6 +1479,8 @@ function AdminDashboard({ bookings }: any) {
             </div>
           </div>
         </div>
+      ) : activeTab === 'facilities' ? (
+        <AdminFacilitiesView roomId={MOCK_ROOMS[0].id} />
       ) : (
         <StaffDatabaseView />
       )}
@@ -1500,6 +1526,581 @@ function AdminDashboard({ bookings }: any) {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+function FacilitiesView({ roomId }: { roomId: string }) {
+  const [details, setDetails] = useState<RoomDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = dbService.subscribeToRoomDetails(roomId, (data) => {
+      setDetails(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [roomId]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-12 h-12 text-brand-600 animate-spin mb-4" />
+        <p className="text-surface-400 font-bold">กำลังโหลดข้อมูลห้องประชุม...</p>
+      </div>
+    );
+  }
+
+  if (!details) {
+    return (
+      <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-surface-200">
+        <Info size={48} className="mx-auto text-surface-200 mb-4" />
+        <p className="text-surface-400 font-bold">ยังไม่มีข้อมูลห้องประชุมในระบบ</p>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-12 pb-20"
+    >
+      {/* Hero Section */}
+      <section className="relative h-[400px] sm:h-[600px] rounded-[3rem] overflow-hidden shadow-2xl">
+        <img 
+          src={details.bannerUrl || "https://picsum.photos/seed/meeting/1920/1080"} 
+          alt="Banner" 
+          className="w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8 sm:p-16">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h1 className="text-4xl sm:text-7xl font-black text-white mb-4 tracking-tight leading-tight">
+              {details.title}
+            </h1>
+            <p className="text-xl sm:text-2xl text-white/80 font-medium max-w-2xl">
+              {details.subtitle}
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Info Bar */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-surface-100 flex items-center gap-6">
+          <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600">
+            <Users size={32} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-surface-400 uppercase tracking-widest mb-1">ความจุผู้เข้าร่วม</p>
+            <p className="text-2xl font-black text-surface-900">10 - 15 ท่าน</p>
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-surface-100 flex items-center gap-6">
+          <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+            <Video size={32} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-surface-400 uppercase tracking-widest mb-1">ระบบประชุมออนไลน์</p>
+            <p className="text-2xl font-black text-surface-900">Zoom & Teams</p>
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-surface-100 flex items-center gap-6">
+          <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center text-violet-600">
+            <Monitor size={32} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-surface-400 uppercase tracking-widest mb-1">จอแสดงผล</p>
+            <p className="text-2xl font-black text-surface-900">Interactive 75"</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Description & Gallery */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <h2 className="text-4xl font-black text-surface-900">รายละเอียดห้องประชุม</h2>
+            <div className="w-20 h-2 bg-brand-600 rounded-full" />
+          </div>
+          <p className="text-xl text-surface-600 leading-relaxed font-medium whitespace-pre-wrap">
+            {details.description}
+          </p>
+          
+          <div className="space-y-6">
+            <h3 className="text-2xl font-black text-surface-900">สิ่งอำนวยความสะดวก</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {details.facilities.map((f) => (
+                <div key={f.id} className="flex items-start gap-4 p-6 bg-surface-50 rounded-3xl border border-surface-100">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-600 shadow-sm shrink-0">
+                    <CheckCircle2 size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-surface-900">{f.title}</h4>
+                    <p className="text-sm text-surface-500 font-medium">{f.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {details.gallery.map((url, idx) => (
+            <motion.div 
+              key={idx}
+              whileHover={{ scale: 1.02 }}
+              className={`rounded-[2rem] overflow-hidden shadow-lg ${idx === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
+            >
+              <img 
+                src={url} 
+                alt={`Gallery ${idx}`} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
+          ))}
+          {details.gallery.length === 0 && (
+            <div className="col-span-2 aspect-video bg-surface-100 rounded-[2rem] flex flex-col items-center justify-center text-surface-300 border-2 border-dashed border-surface-200">
+              <ImageIcon size={48} className="mb-2" />
+              <p className="font-bold">ยังไม่มีรูปภาพในแกลเลอรี</p>
+            </div>
+          )}
+        </div>
+      </section>
+    </motion.div>
+  );
+}
+
+function AdminFacilitiesView({ roomId }: { roomId: string }) {
+  const [details, setDetails] = useState<RoomDetails>({
+    id: roomId,
+    bannerUrl: '',
+    title: '',
+    subtitle: '',
+    description: '',
+    facilities: [],
+    gallery: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const detailsRef = useRef(details);
+
+  useEffect(() => {
+    detailsRef.current = details;
+  }, [details]);
+
+  useEffect(() => {
+    const unsubscribe = dbService.subscribeToRoomDetails(roomId, (data) => {
+      if (data) {
+        setDetails(data);
+      } else {
+        // Set default data if document doesn't exist
+        setDetails({
+          id: roomId,
+          bannerUrl: 'https://picsum.photos/seed/meeting/1920/1080',
+          title: 'ห้องประชุมสำนักพัฒนาการเรียนรู้',
+          subtitle: 'พื้นที่สร้างสรรค์เพื่อการเรียนรู้ที่ทันสมัย',
+          description: 'ห้องประชุมที่ออกแบบมาเพื่อรองรับการทำงานร่วมกัน การระดมสมอง และการนำเสนอผลงาน ด้วยเทคโนโลยีที่ทันสมัยและบรรยากาศที่ส่งเสริมความคิดสร้างสรรค์',
+          facilities: [
+            { id: '1', title: 'Interactive Display 75"', description: 'จออัจฉริยะรองรับการเขียนและสัมผัส' },
+            { id: '2', title: 'High-speed Wi-Fi', description: 'อินเทอร์เน็ตความเร็วสูงครอบคลุมทุกพื้นที่' }
+          ],
+          gallery: []
+        });
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [roomId]);
+
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      await dbService.updateRoomDetails(details);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึก: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUploadBanner = async (url: string) => {
+    const updated = { ...detailsRef.current, bannerUrl: url };
+    setDetails(updated);
+    await dbService.updateRoomDetails(updated);
+  };
+
+  const handleDeleteBanner = async () => {
+    if (detailsRef.current.bannerUrl) {
+      const url = detailsRef.current.bannerUrl;
+      const updated = { ...detailsRef.current, bannerUrl: '' };
+      setDetails(updated);
+      await dbService.updateRoomDetails(updated);
+      await dbService.deleteImage(url);
+    }
+  };
+
+  const handleUploadGallery = async (urls: string | string[]) => {
+    const newUrls = Array.isArray(urls) ? urls : [urls];
+    const updated = { ...detailsRef.current, gallery: [...detailsRef.current.gallery, ...newUrls] };
+    setDetails(updated);
+    await dbService.updateRoomDetails(updated);
+  };
+
+  const handleDeleteGallery = async (url: string, idx: number) => {
+    const newGallery = [...detailsRef.current.gallery];
+    newGallery.splice(idx, 1);
+    const updated = { ...detailsRef.current, gallery: newGallery };
+    setDetails(updated);
+    await dbService.updateRoomDetails(updated);
+    await dbService.deleteImage(url);
+  };
+
+  const addFacility = () => {
+    const newFacility: Facility = {
+      id: Date.now().toString(),
+      title: '',
+      description: ''
+    };
+    setDetails({ ...details, facilities: [...details.facilities, newFacility] });
+  };
+
+  const removeFacility = (id: string) => {
+    setDetails({ ...details, facilities: details.facilities.filter(f => f.id !== id) });
+  };
+
+  const updateFacility = (id: string, field: keyof Facility, value: string) => {
+    setDetails({
+      ...details,
+      facilities: details.facilities.map(f => f.id === id ? { ...f, [field]: value } : f)
+    });
+  };
+
+  if (loading) return <div className="p-20 text-center font-bold text-surface-400">กำลังโหลด...</div>;
+
+  return (
+    <div className="space-y-12 pb-20">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-3xl font-black text-surface-900">จัดการข้อมูลห้องประชุม</h3>
+          <p className="text-sm text-surface-400 font-medium">แก้ไขข้อมูลและรูปภาพที่แสดงในหน้าข้อมูลห้องประชุม</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {saveSuccess && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-emerald-600 font-bold text-sm flex items-center gap-2"
+            >
+              <CheckCircle2 size={16} />
+              บันทึกสำเร็จ
+            </motion.div>
+          )}
+          <Button onClick={handleSave} disabled={saving} className="min-w-[160px]">
+            {saving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+            {saving ? 'กำลังบันทึก...' : 'บันทึกทั้งหมด'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2 space-y-8">
+          {/* General Info */}
+          <div className="bg-white p-8 rounded-[2.5rem] border border-surface-100 shadow-sm space-y-6">
+            <h4 className="text-xl font-black text-surface-900 flex items-center gap-2">
+              <Info size={20} className="text-brand-600" />
+              ข้อมูลทั่วไป
+            </h4>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-surface-400 uppercase tracking-widest ml-1">หัวข้อหลัก (Title)</label>
+                <input 
+                  type="text"
+                  className="w-full p-4 rounded-2xl border border-surface-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-600 outline-none transition-all bg-surface-50 font-bold text-black"
+                  value={details.title}
+                  onChange={e => setDetails({ ...details, title: e.target.value })}
+                  placeholder="เช่น ห้องประชุมสำนักพัฒนาการเรียนรู้"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-surface-400 uppercase tracking-widest ml-1">หัวข้อย่อย (Subtitle)</label>
+                <input 
+                  type="text"
+                  className="w-full p-4 rounded-2xl border border-surface-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-600 outline-none transition-all bg-surface-50 font-medium text-black"
+                  value={details.subtitle}
+                  onChange={e => setDetails({ ...details, subtitle: e.target.value })}
+                  placeholder="เช่น พื้นที่สร้างสรรค์เพื่อการเรียนรู้ที่ทันสมัย"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-surface-400 uppercase tracking-widest ml-1">รายละเอียด (Description)</label>
+                <textarea 
+                  rows={6}
+                  className="w-full p-4 rounded-2xl border border-surface-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-600 outline-none transition-all bg-surface-50 font-medium text-black"
+                  value={details.description}
+                  onChange={e => setDetails({ ...details, description: e.target.value })}
+                  placeholder="ระบุรายละเอียดของห้องประชุม..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Facilities Editor */}
+          <div className="bg-white p-8 rounded-[2.5rem] border border-surface-100 shadow-sm space-y-6">
+            <div className="flex justify-between items-center">
+              <h4 className="text-xl font-black text-surface-900 flex items-center gap-2">
+                <PlusCircle size={20} className="text-brand-600" />
+                สิ่งอำนวยความสะดวก
+              </h4>
+              <button 
+                onClick={addFacility}
+                className="text-brand-600 font-bold text-sm hover:underline flex items-center gap-1"
+              >
+                <Plus size={16} /> เพิ่มรายการ
+              </button>
+            </div>
+            <div className="space-y-4">
+              {details.facilities.map((f, idx) => (
+                <div key={f.id} className="p-6 bg-surface-50 rounded-3xl border border-surface-100 relative group">
+                  <button 
+                    onClick={() => removeFacility(f.id)}
+                    className="absolute top-4 right-4 p-2 text-surface-300 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-surface-400 uppercase tracking-widest ml-1">ชื่อรายการ</label>
+                      <input 
+                        type="text"
+                        className="w-full p-3 rounded-xl border border-surface-200 focus:border-brand-600 outline-none bg-white font-bold text-black"
+                        value={f.title}
+                        onChange={e => updateFacility(f.id, 'title', e.target.value)}
+                        placeholder="เช่น จอ Interactive 75 นิ้ว"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-surface-400 uppercase tracking-widest ml-1">คำอธิบายสั้นๆ</label>
+                      <input 
+                        type="text"
+                        className="w-full p-3 rounded-xl border border-surface-200 focus:border-brand-600 outline-none bg-white font-medium text-black"
+                        value={f.description}
+                        onChange={e => updateFacility(f.id, 'description', e.target.value)}
+                        placeholder="เช่น รองรับการเขียนหน้าจอและแชร์ไร้สาย"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {details.facilities.length === 0 && (
+                <p className="text-center py-8 text-surface-400 font-medium italic">ยังไม่มีรายการสิ่งอำนวยความสะดวก</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {/* Banner Upload */}
+          <div className="bg-white p-8 rounded-[2.5rem] border border-surface-100 shadow-sm space-y-6">
+            <h4 className="text-xl font-black text-surface-900 flex items-center gap-2">
+              <ImageIcon size={20} className="text-brand-600" />
+              ภาพแบนเนอร์
+            </h4>
+            <FileUploader 
+              currentUrl={details.bannerUrl}
+              onUpload={(url) => handleUploadBanner(url as string)}
+              onDelete={handleDeleteBanner}
+              path={`rooms/${roomId}/banner`}
+              label="อัปโหลดภาพแบนเนอร์ (แนะนำ 1920x1080)"
+            />
+          </div>
+
+          {/* Gallery Upload */}
+          <div className="bg-white p-8 rounded-[2.5rem] border border-surface-100 shadow-sm space-y-6">
+            <h4 className="text-xl font-black text-surface-900 flex items-center gap-2">
+              <Maximize size={20} className="text-brand-600" />
+              แกลเลอรีรูปภาพ
+            </h4>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {details.gallery.map((url, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group">
+                    <img src={url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <button 
+                      onClick={() => handleDeleteGallery(url, idx)}
+                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <FileUploader 
+                onUpload={handleUploadGallery}
+                path={`rooms/${roomId}/gallery`}
+                label="เพิ่มรูปภาพแกลเลอรี"
+                multiple={true}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileUploader({ currentUrl, onUpload, onDelete, path, label, multiple = false }: { currentUrl?: string, onUpload: (url: string | string[]) => void, onDelete?: () => void, path: string, label: string, multiple?: boolean }) {
+  const [progress, setProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files) as File[];
+    
+    // Constraints: 10MB max per file
+    const MAX_SIZE = 10 * 1024 * 1024;
+    const invalidSize = fileList.some(f => f.size > MAX_SIZE);
+    if (invalidSize) {
+      setError('ขนาดไฟล์ต้องไม่เกิน 10MB ต่อภาพ');
+      return;
+    }
+
+    // Type check
+    const invalidType = fileList.some(f => !f.type.startsWith('image/'));
+    if (invalidType) {
+      setError('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+      return;
+    }
+
+    setError(null);
+    setUploading(true);
+    setProgress(0);
+
+    try {
+      if (multiple) {
+        const urls: string[] = [];
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          // Update progress based on total files
+          const url = await dbService.uploadImage(file, `${path}_${i}_${Date.now()}`, (p) => {
+            const overallProgress = ((i / fileList.length) * 100) + (p / fileList.length);
+            setProgress(overallProgress);
+          });
+          urls.push(url);
+        }
+        onUpload(urls);
+      } else {
+        const url = await dbService.uploadImage(fileList[0], path, (p) => setProgress(p));
+        onUpload(url);
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError('เกิดข้อผิดพลาดในการอัปโหลด');
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {currentUrl ? (
+        <div className="relative aspect-video rounded-2xl overflow-hidden border border-surface-100 shadow-inner group">
+          <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 gap-4">
+            <label className="p-3 bg-white text-brand-600 rounded-full hover:bg-brand-50 transition-colors shadow-lg cursor-pointer">
+              <Edit3 size={24} />
+              <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} accept="image/*" />
+            </label>
+            {onDelete && (
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (confirm('คุณต้องการลบรูปภาพนี้ใช่หรือไม่?')) {
+                    onDelete();
+                  }
+                }}
+                className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+              >
+                <Trash2 size={24} />
+              </button>
+            )}
+          </div>
+          
+          {uploading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-8">
+              <div className="w-full max-w-xs space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-black text-brand-600 animate-pulse">กำลังอัปโหลด...</span>
+                  <span className="text-sm font-black text-brand-600">{Math.round(progress)}%</span>
+                </div>
+                <div className="w-full bg-surface-100 rounded-full h-2.5 overflow-hidden border border-surface-200">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    className="bg-brand-600 h-full shadow-[0_0_10px_rgba(var(--brand-600-rgb),0.5)]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative">
+          <label className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-[2rem] transition-all cursor-pointer ${uploading ? 'bg-surface-50 border-surface-200' : 'bg-surface-50 border-surface-200 hover:border-brand-400 hover:bg-brand-50/30'}`}>
+            {!uploading ? (
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-brand-600 shadow-sm mb-4">
+                  <Upload className="w-8 h-8" />
+                </div>
+                <p className="text-sm font-bold text-surface-700">{label}</p>
+                <p className="text-xs text-surface-400 mt-1 font-medium">PNG, JPG, WEBP (Max 10MB)</p>
+                {multiple && <p className="text-[10px] text-brand-500 mt-1 font-black uppercase tracking-widest">เลือกได้หลายไฟล์</p>}
+              </div>
+            ) : (
+              <div className="w-full px-12 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-black text-brand-600 animate-pulse">กำลังอัปโหลด...</span>
+                  <span className="text-sm font-black text-brand-600">{Math.round(progress)}%</span>
+                </div>
+                <div className="w-full bg-surface-200 rounded-full h-2.5 overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    className="bg-brand-600 h-full"
+                  />
+                </div>
+              </div>
+            )}
+            <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} accept="image/*" multiple={multiple} />
+          </label>
+        </div>
+      )}
+
+      {error && (
+        <motion.p 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xs text-red-500 font-bold flex items-center gap-2 bg-red-50 p-3 rounded-xl border border-red-100"
+        >
+          <AlertCircle size={16} /> {error}
+        </motion.p>
+      )}
     </div>
   );
 }

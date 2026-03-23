@@ -45,6 +45,39 @@
         "email": { "type": "string" }
       },
       "required": ["code", "name", "email"]
+    },
+    "Facility": {
+      "title": "Facility",
+      "description": "A facility available in a meeting room.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "title", "description"]
+    },
+    "RoomDetails": {
+      "title": "RoomDetails",
+      "description": "Detailed information about a meeting room's facilities and gallery.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bannerUrl": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "facilities": { 
+          "type": "array",
+          "items": { "$ref": "Facility" }
+        },
+        "gallery": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["id", "title", "subtitle", "description", "facilities", "gallery"]
     }
   },
   "firestore": {
@@ -55,6 +88,10 @@
     "/bookings/{bookingId}": {
       "schema": "Booking",
       "description": "Meeting room booking records."
+    },
+    "/roomDetails/{roomId}": {
+      "schema": "RoomDetails",
+      "description": "Detailed information about a meeting room's facilities and gallery."
     },
     "/staff/{staffId}": {
       "schema": "Staff",

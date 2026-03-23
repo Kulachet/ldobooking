@@ -16,14 +16,19 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  serverTimestamp
+  serverTimestamp,
+  storage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject
 } from '../firebase';
-import { Booking, User } from '../types';
+import { Booking, User, RoomDetails, Facility } from '../types';
 // import emailjs from '@emailjs/browser';
 
 // Constants
 export const MOCK_ROOMS = [
-  { id: 'room-1', name: 'ห้องประชุมสำนักพัฒนาการเรียนรู้', capacity: 30 },
+  { id: 'room-1', name: 'ห้องประชุมสำนักพัฒนาการเรียนรู้', capacity: 15 },
 ];
 
 export const ADMIN_EMAILS = [
@@ -384,6 +389,58 @@ export const dbService = {
     } catch (error) {
       console.error('Failed to send booking emails:', error);
       return false;
+    }
+  },
+  
+  // Room Details & Facilities
+  subscribeToRoomDetails: (roomId: string, callback: (details: RoomDetails | null) => void) => {
+    return onSnapshot(doc(db, 'roomDetails', roomId), (snapshot) => {
+      if (snapshot.exists()) {
+        callback({ id: snapshot.id, ...snapshot.data() } as RoomDetails);
+      } else {
+        callback(null);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `roomDetails/${roomId}`);
+    });
+  },
+
+  updateRoomDetails: async (details: RoomDetails) => {
+    try {
+      await setDoc(doc(db, 'roomDetails', details.id), details);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `roomDetails/${details.id}`);
+    }
+  },
+
+  uploadImage: (file: File, path: string, onProgress: (progress: number) => void): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const storageRef = ref(storage, path);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(progress);
+        }, 
+        (error) => {
+          reject(error);
+        }, 
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            resolve(downloadURL);
+          });
+        }
+      );
+    });
+  },
+
+  deleteImage: async (url: string) => {
+    try {
+      const storageRef = ref(storage, url);
+      await deleteObject(storageRef);
+    } catch (error) {
+      console.error('Delete image error:', error);
     }
   }
 };
