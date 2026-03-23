@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the meeting room booking system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "department": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid", "displayName", "email", "role"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A meeting room booking record.",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "department": { "type": "string" },
+        "roomId": { "type": "string" },
+        "roomName": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["approved", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "userId", "userName", "userEmail", "roomId", "startTime", "endTime", "status", "createdAt"]
+    },
+    "Staff": {
+      "title": "Staff",
+      "description": "Staff member data for profile synchronization.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "department": { "type": "string" },
+        "phone": { "type": "string" },
+        "position": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["code", "name", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile information."
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Meeting room booking records."
+    },
+    "/staff/{staffId}": {
+      "schema": "Staff",
+      "description": "Staff member data for profile synchronization."
+    }
+  }
+}

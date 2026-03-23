@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Noto Sans Thai", sans-serif;
+  
+  --color-brand-50: #f5f4ff;
+  --color-brand-100: #eceaff;
+  --color-brand-200: #d9d6ff;
+  --color-brand-300: #b9b2ff;
+  --color-brand-400: #9486ff;
+  --color-brand-500: #7c73c0; /* Orix Indigo */
+  --color-brand-600: #6259a8;
+  --color-brand-700: #4b447e; /* Deep Orix */
+  --color-brand-800: #3e3a63; /* Background Orix */
+  --color-brand-900: #343054;
+  --color-brand-950: #1e1b33;
+
+  --color-surface-50: #fffcf7;
+  --color-surface-100: #fde0b2; /* Orix Peach/Cream */
+  --color-surface-200: #f9d195;
+  --color-surface-300: #f4bd71;
+  --color-surface-400: #ee9e4a;
+  --color-surface-500: #e8822d;
+  --color-surface-600: #d96a22;
+  --color-surface-700: #b4511e;
+  --color-surface-800: #90421f;
+  --color-surface-900: #3e3a63; /* Text on Peach */
+
+  --shadow-premium: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-brand-800 text-white font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-brand-700/40 backdrop-blur-xl border border-white/10 shadow-glass;
+  }
+  
+  .premium-card {
+    @apply bg-surface-100 text-surface-900 border-none shadow-premium rounded-[2.5rem];
+  }
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+@media (max-width: 640px) {
+  .calendar-grid {
+    gap: 0.5rem !important;
+  }
+}
+
+.time-slot-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-200 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-surface-300;
+}
