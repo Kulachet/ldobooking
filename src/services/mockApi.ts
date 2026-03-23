@@ -312,7 +312,7 @@ export const dbService = {
     });
   },
   sendBookingEmail: async (booking: Booking) => {
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'ldo@bu.ac.th';
+    const adminEmails = ADMIN_EMAILS.join(', ');
 
     try {
       // Send to User
@@ -345,14 +345,14 @@ export const dbService = {
         }),
       });
 
-      // Send to Admin
+      // Send to Admins
       const adminEmailPromise = fetch('/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          to: adminEmail,
+          to: adminEmails,
           subject: `มีรายการจองห้องประชุมใหม่: ${booking.subject}`,
           html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
