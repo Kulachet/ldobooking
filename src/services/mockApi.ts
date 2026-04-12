@@ -16,12 +16,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  serverTimestamp,
-  storage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject
+  serverTimestamp
 } from '../firebase';
 import { Booking, User, RoomDetails, Facility } from '../types';
 // import emailjs from '@emailjs/browser';
@@ -108,12 +103,13 @@ export const authService = {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           let userData: User;
           
-          // Base data from Firebase Auth
-          const baseUserData = {
+          const baseUserData: any = {
             uid: firebaseUser.uid,
             email: email,
-            photoURL: firebaseUser.photoURL || undefined,
           };
+          if (firebaseUser.photoURL) {
+            baseUserData.photoURL = firebaseUser.photoURL;
+          }
 
           if (userDoc.exists()) {
             const existingData = userDoc.data() as User;
@@ -121,11 +117,11 @@ export const authService = {
             userData = {
               ...existingData,
               ...baseUserData, // Ensure latest photoURL and email
-              displayName: staff ? staff.name : (existingData.displayName || firebaseUser.displayName || 'Unknown User'),
-              department: staff ? staff.department : (existingData.department || 'ทั่วไป'),
-              phone: staff ? getExtension(staff.phone) : (existingData.phone || ''),
-              position: staff ? staff.position : (existingData.position || ''),
-              staffCode: staff ? staff.code : (existingData.staffCode || ''),
+              displayName: staff ? (staff.name || existingData.displayName || firebaseUser.displayName || 'Unknown User') : (existingData.displayName || firebaseUser.displayName || 'Unknown User'),
+              department: staff ? (staff.department || existingData.department || 'ทั่วไป') : (existingData.department || 'ทั่วไป'),
+              phone: staff ? getExtension(staff.phone || '') : (existingData.phone || ''),
+              position: staff ? (staff.position || existingData.position || '') : (existingData.position || ''),
+              staffCode: staff ? (staff.code || existingData.staffCode || '') : (existingData.staffCode || ''),
               role: ADMIN_EMAILS.includes(email) ? 'admin' : existingData.role,
             };
             
@@ -137,12 +133,12 @@ export const authService = {
             // Create new user profile
             userData = {
               ...baseUserData,
-              displayName: staff ? staff.name : (firebaseUser.displayName || 'Unknown User'),
-              department: staff ? staff.department : 'ทั่วไป',
+              displayName: staff ? (staff.name || firebaseUser.displayName || 'Unknown User') : (firebaseUser.displayName || 'Unknown User'),
+              department: staff ? (staff.department || 'ทั่วไป') : 'ทั่วไป',
               role: ADMIN_EMAILS.includes(email) ? 'admin' : 'user',
-              phone: staff ? getExtension(staff.phone) : '',
-              position: staff ? staff.position : '',
-              staffCode: staff ? staff.code : '',
+              phone: staff ? getExtension(staff.phone || '') : '',
+              position: staff ? (staff.position || '') : '',
+              staffCode: staff ? (staff.code || '') : '',
             } as User;
             
             // ONLY save to Firestore if the user is an admin
@@ -264,10 +260,12 @@ export const dbService = {
   },
   sendStatusUpdateEmail: async (booking: Booking, status: 'approved' | 'cancelled') => {
     const statusThai = status === 'approved' ? 'อนุมัติ' : 'ยกเลิก';
+    const gasUrl = import.meta.env.VITE_GAS_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbzK_Y3jHmldTMZ0h9N2WtGbxch34OoNpHMlVlSNTGOX2vagznsNH89WGqcI9Mf5vXf2/exec';
 
     try {
-      const response = await fetch('/api/send-email', {
+      const response = await fetch(gasUrl, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -295,13 +293,7 @@ export const dbService = {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.warn('Failed to send status update email via Gmail:', errorData);
-        return false;
-      }
-
-      console.log('Status update email sent successfully via Gmail SMTP');
+      console.log('Status update email sent successfully via Google Apps Script');
       return true;
     } catch (error) {
       console.error('Failed to send status update email:', error);
@@ -318,11 +310,13 @@ export const dbService = {
   },
   sendBookingEmail: async (booking: Booking) => {
     const adminEmails = ADMIN_EMAILS.join(', ');
+    const gasUrl = import.meta.env.VITE_GAS_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbzK_Y3jHmldTMZ0h9N2WtGbxch34OoNpHMlVlSNTGOX2vagznsNH89WGqcI9Mf5vXf2/exec';
 
     try {
       // Send to User
-      const userEmailPromise = fetch('/api/send-email', {
+      const userEmailPromise = fetch(gasUrl, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -351,8 +345,9 @@ export const dbService = {
       });
 
       // Send to Admins
-      const adminEmailPromise = fetch('/api/send-email', {
+      const adminEmailPromise = fetch(gasUrl, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -378,13 +373,9 @@ export const dbService = {
         }),
       });
 
-      const [userRes, adminRes] = await Promise.all([userEmailPromise, adminEmailPromise]);
+      await Promise.all([userEmailPromise, adminEmailPromise]);
 
-      if (!userRes.ok || !adminRes.ok) {
-        console.warn('One or more emails failed to send via Gmail SMTP');
-      }
-
-      console.log('Booking confirmation emails sent successfully via Gmail SMTP');
+      console.log('Booking confirmation emails sent successfully via Google Apps Script');
       return true;
     } catch (error) {
       console.error('Failed to send booking emails:', error);
@@ -410,37 +401,6 @@ export const dbService = {
       await setDoc(doc(db, 'roomDetails', details.id), details);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `roomDetails/${details.id}`);
-    }
-  },
-
-  uploadImage: (file: File, path: string, onProgress: (progress: number) => void): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const storageRef = ref(storage, path);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          onProgress(progress);
-        }, 
-        (error) => {
-          reject(error);
-        }, 
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            resolve(downloadURL);
-          });
-        }
-      );
-    });
-  },
-
-  deleteImage: async (url: string) => {
-    try {
-      const storageRef = ref(storage, url);
-      await deleteObject(storageRef);
-    } catch (error) {
-      console.error('Delete image error:', error);
     }
   }
 };

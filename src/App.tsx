@@ -1961,60 +1961,37 @@ function AdminFacilitiesView({ roomId }: { roomId: string }) {
   );
 }
 
+function getDriveDirectLink(url: string): string {
+  try {
+    const match = url.match(/\/d\/(.+?)\//);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    }
+    return url;
+  } catch (e) {
+    return url;
+  }
+}
+
 function FileUploader({ currentUrl, onUpload, onDelete, path, label, multiple = false }: { currentUrl?: string, onUpload: (url: string | string[]) => void, onDelete?: () => void, path: string, label: string, multiple?: boolean }) {
-  const [progress, setProgress] = useState(0);
-  const [uploading, setUploading] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const fileList = Array.from(files) as File[];
+  const handleAddLink = () => {
+    if (!inputValue.trim()) {
+      setError('กรุณาระบุลิงก์');
+      return;
+    }
     
-    // Constraints: 10MB max per file
-    const MAX_SIZE = 10 * 1024 * 1024;
-    const invalidSize = fileList.some(f => f.size > MAX_SIZE);
-    if (invalidSize) {
-      setError('ขนาดไฟล์ต้องไม่เกิน 10MB ต่อภาพ');
-      return;
-    }
-
-    // Type check
-    const invalidType = fileList.some(f => !f.type.startsWith('image/'));
-    if (invalidType) {
-      setError('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
-      return;
-    }
-
     setError(null);
-    setUploading(true);
-    setProgress(0);
-
-    try {
-      if (multiple) {
-        const urls: string[] = [];
-        for (let i = 0; i < fileList.length; i++) {
-          const file = fileList[i];
-          // Update progress based on total files
-          const url = await dbService.uploadImage(file, `${path}_${i}_${Date.now()}`, (p) => {
-            const overallProgress = ((i / fileList.length) * 100) + (p / fileList.length);
-            setProgress(overallProgress);
-          });
-          urls.push(url);
-        }
-        onUpload(urls);
-      } else {
-        const url = await dbService.uploadImage(fileList[0], path, (p) => setProgress(p));
-        onUpload(url);
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError('เกิดข้อผิดพลาดในการอัปโหลด');
-    } finally {
-      setUploading(false);
-      setProgress(0);
+    const directLink = getDriveDirectLink(inputValue.trim());
+    
+    if (multiple) {
+      onUpload([directLink]);
+    } else {
+      onUpload(directLink);
     }
+    setInputValue('');
   };
 
   return (
@@ -2023,10 +2000,6 @@ function FileUploader({ currentUrl, onUpload, onDelete, path, label, multiple = 
         <div className="relative aspect-video rounded-2xl overflow-hidden border border-surface-100 shadow-inner group">
           <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 gap-4">
-            <label className="p-3 bg-white text-brand-600 rounded-full hover:bg-brand-50 transition-colors shadow-lg cursor-pointer">
-              <Edit3 size={24} />
-              <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} accept="image/*" />
-            </label>
             {onDelete && (
               <button 
                 onClick={(e) => {
@@ -2041,54 +2014,31 @@ function FileUploader({ currentUrl, onUpload, onDelete, path, label, multiple = 
               </button>
             )}
           </div>
-          
-          {uploading && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-8">
-              <div className="w-full max-w-xs space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-black text-brand-600 animate-pulse">กำลังอัปโหลด...</span>
-                  <span className="text-sm font-black text-brand-600">{Math.round(progress)}%</span>
-                </div>
-                <div className="w-full bg-surface-100 rounded-full h-2.5 overflow-hidden border border-surface-200">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    className="bg-brand-600 h-full shadow-[0_0_10px_rgba(var(--brand-600-rgb),0.5)]"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
-        <div className="relative">
-          <label className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-[2rem] transition-all cursor-pointer ${uploading ? 'bg-surface-50 border-surface-200' : 'bg-surface-50 border-surface-200 hover:border-brand-400 hover:bg-brand-50/30'}`}>
-            {!uploading ? (
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-brand-600 shadow-sm mb-4">
-                  <Upload className="w-8 h-8" />
-                </div>
-                <p className="text-sm font-bold text-surface-700">{label}</p>
-                <p className="text-xs text-surface-400 mt-1 font-medium">PNG, JPG, WEBP (Max 10MB)</p>
-                {multiple && <p className="text-[10px] text-brand-500 mt-1 font-black uppercase tracking-widest">เลือกได้หลายไฟล์</p>}
-              </div>
-            ) : (
-              <div className="w-full px-12 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-black text-brand-600 animate-pulse">กำลังอัปโหลด...</span>
-                  <span className="text-sm font-black text-brand-600">{Math.round(progress)}%</span>
-                </div>
-                <div className="w-full bg-surface-200 rounded-full h-2.5 overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    className="bg-brand-600 h-full"
-                  />
-                </div>
-              </div>
-            )}
-            <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} accept="image/*" multiple={multiple} />
-          </label>
+        <div className="relative flex flex-col gap-2 bg-surface-50 p-4 rounded-[2rem] border-2 border-dashed border-surface-200">
+          <label className="text-sm font-bold text-surface-700 text-center mb-2">{label}</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input 
+              type="text" 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="วางลิงก์ Google Drive ที่นี่..."
+              className="flex-1 px-4 py-3 border border-surface-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm"
+            />
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                handleAddLink();
+              }}
+              className="px-6 py-3 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors font-semibold text-sm whitespace-nowrap"
+            >
+              เพิ่มรูปภาพ
+            </button>
+          </div>
+          <p className="text-xs text-surface-400 font-medium text-center mt-2">
+            ใช้ลิงก์แชร์จาก Google Drive (ต้องตั้งค่าสิทธิ์เป็น "ทุกคนที่มีลิงก์")
+          </p>
         </div>
       )}
 
