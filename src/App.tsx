@@ -682,6 +682,103 @@ export default function App() {
   );
 }
 
+const THAI_HOLIDAYS: Record<string, string> = {
+  "2024-01-01": "วันขึ้นปีใหม่",
+  "2024-02-24": "วันมาฆบูชา",
+  "2024-02-26": "ชดเชยวันมาฆบูชา",
+  "2024-04-06": "วันจักรี",
+  "2024-04-08": "ชดเชยวันจักรี",
+  "2024-04-13": "วันสงกรานต์",
+  "2024-04-14": "วันสงกรานต์",
+  "2024-04-15": "วันสงกรานต์",
+  "2024-04-16": "ชดเชยวันสงกรานต์",
+  "2024-05-01": "วันแรงงานแห่งชาติ",
+  "2024-05-04": "วันฉัตรมงคล",
+  "2024-05-06": "ชดเชยวันฉัตรมงคล",
+  "2024-05-22": "วันวิสาขบูชา",
+  "2024-06-03": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสุทิดาฯ",
+  "2024-07-20": "วันอาสาฬหบูชา",
+  "2024-07-21": "วันเข้าพรรษา",
+  "2024-07-22": "ชดเชยวันเข้าพรรษา",
+  "2024-07-28": "วันเฉลิมพระชนมพรรษา ร.10",
+  "2024-07-29": "ชดเชยวันเฉลิมพระชนมพรรษา ร.10",
+  "2024-08-12": "วันแม่แห่งชาติ",
+  "2024-10-13": "วันนวมินทรมหาราช",
+  "2024-10-14": "ชดเชยวันนวมินทรมหาราช",
+  "2024-10-23": "วันปิยมหาราช",
+  "2024-12-05": "วันพ่อแห่งชาติ",
+  "2024-12-10": "วันรัฐธรรมนูญ",
+  "2024-12-31": "วันสิ้นปี",
+  "2025-01-01": "วันขึ้นปีใหม่",
+  "2025-02-12": "วันมาฆบูชา",
+  "2025-04-06": "วันจักรี",
+  "2025-04-07": "ชดเชยวันจักรี",
+  "2025-04-13": "วันสงกรานต์",
+  "2025-04-14": "วันสงกรานต์",
+  "2025-04-15": "วันสงกรานต์",
+  "2025-05-01": "วันแรงงานแห่งชาติ",
+  "2025-05-04": "วันฉัตรมงคล",
+  "2025-05-05": "ชดเชยวันฉัตรมงคล",
+  "2025-05-11": "วันวิสาขบูชา",
+  "2025-05-12": "ชดเชยวันวิสาขบูชา",
+  "2025-06-03": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสุทิดาฯ",
+  "2025-07-10": "วันอาสาฬหบูชา",
+  "2025-07-11": "วันเข้าพรรษา",
+  "2025-07-28": "วันเฉลิมพระชนมพรรษา ร.10",
+  "2025-08-12": "วันแม่แห่งชาติ",
+  "2025-10-13": "วันนวมินทรมหาราช",
+  "2025-10-23": "วันปิยมหาราช",
+  "2025-12-05": "วันพ่อแห่งชาติ",
+  "2025-12-10": "วันรัฐธรรมนูญ",
+  "2025-12-31": "วันสิ้นปี",
+  "2026-01-01": "วันขึ้นปีใหม่",
+  "2026-03-03": "วันมาฆบูชา",
+  "2026-04-06": "วันจักรี",
+  "2026-04-07": "ชดเชยวันจักรี",
+  "2026-04-13": "วันสงกรานต์",
+  "2026-04-14": "วันสงกรานต์",
+  "2026-04-15": "วันสงกรานต์",
+  "2026-05-01": "วันแรงงานแห่งชาติ",
+  "2026-05-04": "วันฉัตรมงคล",
+  "2026-05-31": "วันวิสาขบูชา",
+  "2026-06-01": "ชดเชยวันวิสาขบูชา",
+  "2026-06-03": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสุทิดาฯ",
+  "2026-07-28": "วันเฉลิมพระชนมพรรษา ร.10",
+  "2026-07-29": "วันอาสาฬหบูชา",
+  "2026-07-30": "วันเข้าพรรษา",
+  "2026-08-12": "วันแม่แห่งชาติ",
+  "2026-10-13": "วันนวมินทรมหาราช",
+  "2026-10-23": "วันปิยมหาราช",
+  "2026-12-05": "วันพ่อแห่งชาติ",
+  "2026-12-10": "วันรัฐธรรมนูญ",
+  "2026-12-31": "วันสิ้นปี",
+  "2027-01-01": "วันขึ้นปีใหม่",
+  "2027-02-20": "วันมาฆบูชา",
+  "2027-02-22": "ชดเชยวันมาฆบูชา",
+  "2027-04-06": "วันจักรี",
+  "2027-04-13": "วันสงกรานต์",
+  "2027-04-14": "วันสงกรานต์",
+  "2027-04-15": "วันสงกรานต์",
+  "2027-04-16": "ชดเชยวันสงกรานต์",
+  "2027-05-01": "วันแรงงานแห่งชาติ",
+  "2027-05-03": "ชดเชยวันแรงงานแห่งชาติ",
+  "2027-05-04": "วันฉัตรมงคล",
+  "2027-05-20": "วันวิสาขบูชา",
+  "2027-06-03": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสุทิดาฯ",
+  "2027-07-18": "วันอาสาฬหบูชา",
+  "2027-07-19": "วันเข้าพรรษา",
+  "2027-07-20": "ชดเชยวันเข้าพรรษา",
+  "2027-07-28": "วันเฉลิมพระชนมพรรษา ร.10",
+  "2027-08-12": "วันแม่แห่งชาติ",
+  "2027-10-13": "วันนวมินทรมหาราช",
+  "2027-10-23": "วันปิยมหาราช",
+  "2027-10-25": "ชดเชยวันปิยมหาราช",
+  "2027-12-05": "วันพ่อแห่งชาติ",
+  "2027-12-06": "ชดเชยวันพ่อแห่งชาติ",
+  "2027-12-10": "วันรัฐธรรมนูญ",
+  "2027-12-31": "วันสิ้นปี",
+};
+
 // --- Sub-Views ---
 
 function CalendarView({ currentDate, onPrev, onNext, onPrevYear, onNextYear, onMonthChange, onYearChange, bookings, onSlotClick }: any) {
@@ -783,20 +880,38 @@ function CalendarView({ currentDate, onPrev, onNext, onPrevYear, onNextYear, onM
               return bDate.getDate() === day && bDate.getMonth() === currentDate.getMonth() && bDate.getFullYear() === currentDate.getFullYear() && b.status === 'approved';
             }).sort((a: Booking, b: Booking) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
+            const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const holidayName = THAI_HOLIDAYS[dateStr];
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const isHolidayOrWeekend = holidayName || isWeekend;
+
             return (
               <motion.div 
                 key={day} 
-                whileHover={{ y: -4, scale: 1.02 }}
-                onClick={() => onSlotClick(date, MOCK_ROOMS[0].id)}
-                className={`min-h-[80px] sm:min-h-[140px] p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border transition-all cursor-pointer group relative ${isToday ? 'border-brand-600 bg-brand-50/30' : 'border-surface-100 bg-white hover:border-brand-300 hover:shadow-xl'}`}
+                whileHover={!isHolidayOrWeekend ? { y: -4, scale: 1.02 } : {}}
+                onClick={() => !isHolidayOrWeekend && onSlotClick(date, MOCK_ROOMS[0].id)}
+                className={`min-h-[80px] sm:min-h-[140px] p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border transition-all relative ${
+                  isHolidayOrWeekend 
+                    ? 'border-surface-100 bg-surface-50/50 cursor-not-allowed opacity-80' 
+                    : `cursor-pointer group ${isToday ? 'border-brand-600 bg-brand-50/30' : 'border-surface-100 bg-white hover:border-brand-300 hover:shadow-xl'}`
+                }`}
               >
                 <div className="flex justify-between items-start mb-1 sm:mb-3">
-                  <span className={`text-sm sm:text-xl font-black w-6 h-6 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-2xl transition-all ${isToday ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30' : 'text-black group-hover:text-brand-600'}`}>
-                    {day}
-                  </span>
-                  <div className="hidden sm:flex w-8 h-8 bg-brand-50 rounded-xl items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-brand-600">
-                    <Plus size={18} />
+                  <div className="flex flex-col">
+                    <span className={`text-sm sm:text-xl font-black w-6 h-6 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-2xl transition-all ${isToday ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30' : isHolidayOrWeekend ? 'text-red-500' : 'text-black group-hover:text-brand-600'}`}>
+                      {day}
+                    </span>
+                    {holidayName && (
+                      <span className="text-[8px] sm:text-[10px] font-bold text-red-500 mt-1 leading-tight max-w-[60px] sm:max-w-[100px]">
+                        {holidayName}
+                      </span>
+                    )}
                   </div>
+                  {!isHolidayOrWeekend && (
+                    <div className="hidden sm:flex w-8 h-8 bg-brand-50 rounded-xl items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-brand-600">
+                      <Plus size={18} />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-1 sm:space-y-2">

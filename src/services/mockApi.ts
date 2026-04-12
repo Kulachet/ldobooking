@@ -267,7 +267,7 @@ export const dbService = {
         method: 'POST',
         mode: 'no-cors',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain',
         },
         body: JSON.stringify({
           to: booking.userEmail,
@@ -318,7 +318,7 @@ export const dbService = {
         method: 'POST',
         mode: 'no-cors',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain',
         },
         body: JSON.stringify({
           to: booking.userEmail,
@@ -349,7 +349,7 @@ export const dbService = {
         method: 'POST',
         mode: 'no-cors',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain',
         },
         body: JSON.stringify({
           to: adminEmails,
