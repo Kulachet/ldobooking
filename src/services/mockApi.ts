@@ -27,7 +27,7 @@ export const MOCK_ROOMS = [
 ];
 
 export const ADMIN_EMAILS = [
-  'kulachet.l@bu.ac.th',
+  import.meta.env.VITE_ADMIN_EMAIL || 'kulachet.l@bu.ac.th',
   'napaporn.pu@bu.ac.th',
   'ldo@bu.ac.th'
 ];
@@ -260,7 +260,7 @@ export const dbService = {
   },
   sendStatusUpdateEmail: async (booking: Booking, status: 'approved' | 'cancelled') => {
     const statusThai = status === 'approved' ? 'อนุมัติ' : 'ยกเลิก';
-    const gasUrl = import.meta.env.VITE_GAS_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbzK_Y3jHmldTMZ0h9N2WtGbxch34OoNpHMlVlSNTGOX2vagznsNH89WGqcI9Mf5vXf2/exec';
+    const gasUrl = import.meta.env.VITE_GAS_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbwXGcuubKzRI7ZdxMcgTR9cWodP6x-z0Efam0euk-30A3bgVNy4Aw0o3re9mzgVzxZx/exec';
 
     try {
       const response = await fetch(gasUrl, {
@@ -310,7 +310,7 @@ export const dbService = {
   },
   sendBookingEmail: async (booking: Booking) => {
     const adminEmails = ADMIN_EMAILS.join(', ');
-    const gasUrl = import.meta.env.VITE_GAS_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbzK_Y3jHmldTMZ0h9N2WtGbxch34OoNpHMlVlSNTGOX2vagznsNH89WGqcI9Mf5vXf2/exec';
+    const gasUrl = import.meta.env.VITE_GAS_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbwXGcuubKzRI7ZdxMcgTR9cWodP6x-z0Efam0euk-30A3bgVNy4Aw0o3re9mzgVzxZx/exec';
 
     try {
       // Send to User

@@ -867,7 +867,7 @@ function CalendarView({ currentDate, onPrev, onNext, onPrevYear, onNextYear, onM
 
         <div className="calendar-grid gap-1 sm:gap-4">
           {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <div key={`empty-${i}`} className="aspect-square bg-surface-50/50 rounded-xl sm:rounded-3xl border border-dashed border-surface-100"></div>
+            <div key={`empty-${i}`} className="min-h-[80px] sm:min-h-[140px] bg-surface-50/50 rounded-xl sm:rounded-3xl border border-dashed border-surface-100"></div>
           ))}
           
           {Array.from({ length: daysInMonth }).map((_, i) => {
