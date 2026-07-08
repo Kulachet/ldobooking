@@ -339,8 +339,6 @@ export const dbService = {
     });
   },
   sendBookingEmail: async (booking: Booking) => {
-    const adminEmails = ADMIN_EMAILS.join(', ');
-
     try {
       const formattedDate = new Date(booking.startTime).toLocaleDateString('th-TH', { 
         weekday: 'long', 
@@ -400,67 +398,71 @@ export const dbService = {
         }),
       });
 
-      // 2. Send to Admins (Notification)
-      await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: adminEmails,
-          subject: `มีรายการจองห้องประชุมใหม่: ${booking.subject} [โดย ${booking.userName}]`,
-          html: `
-            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-              <div style="background-color: #3b82f6; padding: 20px; color: white; text-align: center;">
-                <h2 style="margin: 0; font-size: 20px;">มีรายการจองห้องประชุมใหม่</h2>
-              </div>
-              <div style="padding: 24px; background-color: #ffffff;">
-                <p style="margin-top: 0; font-size: 16px;">มีผู้ทำรายการจองห้องประชุมใหม่เข้ามาในระบบ โดยมีรายละเอียดดังนี้:</p>
-                
-                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; width: 120px; font-weight: bold;">ผู้จอง:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.userName}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">หัวข้อ:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500; color: #1e3a8a;">${booking.subject}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">ห้องประชุม:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.roomName}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">วันที่/เวลา:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500; color: #d97706;">${formattedDate} เวลา ${formattedTime}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">หน่วยงาน:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.department || '-'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">เบอร์โทรศัพท์:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.userPhone || '-'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">อีเมล:</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.userEmail}</td>
-                  </tr>
-                </table>
-                
-                <div style="text-align: center; margin-top: 30px;">
-                  <a href="${window.location.origin}/admin" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; font-weight: bold; border-radius: 6px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
-                    ไปที่หน้าระบบจัดการการจอง
-                  </a>
+      // 2. Send to Admins (Notification) - Sent individually to ensure robust delivery
+      const adminPromises = ADMIN_EMAILS.map(adminEmail => {
+        return fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: adminEmail,
+            subject: `มีรายการจองห้องประชุมใหม่: ${booking.subject} [โดย ${booking.userName}]`,
+            html: `
+              <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <div style="background-color: #3b82f6; padding: 20px; color: white; text-align: center;">
+                  <h2 style="margin: 0; font-size: 20px;">มีรายการจองห้องประชุมใหม่</h2>
+                </div>
+                <div style="padding: 24px; background-color: #ffffff;">
+                  <p style="margin-top: 0; font-size: 16px;">มีผู้ทำรายการจองห้องประชุมใหม่เข้ามาในระบบ โดยมีรายละเอียดดังนี้:</p>
+                  
+                  <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; width: 120px; font-weight: bold;">ผู้จอง:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.userName}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">หัวข้อ:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500; color: #1e3a8a;">${booking.subject}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">ห้องประชุม:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.roomName}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">วันที่/เวลา:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500; color: #d97706;">${formattedDate} เวลา ${formattedTime}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">หน่วยงาน:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.department || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">เบอร์โทรศัพท์:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.userPhone || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: bold;">อีเมล:</td>
+                      <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 500;">${booking.userEmail}</td>
+                    </tr>
+                  </table>
+                  
+                  <div style="text-align: center; margin-top: 30px;">
+                    <a href="${window.location.origin}/admin" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; font-weight: bold; border-radius: 6px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                      ไปที่หน้าระบบจัดการการจอง
+                    </a>
+                  </div>
+                </div>
+                <div style="background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
+                  อีเมลนี้จัดส่งโดยระบบจองห้องประชุมอัตโนมัติ (BU Meeting Room Reservation)
                 </div>
               </div>
-              <div style="background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
-                อีเมลนี้จัดส่งโดยระบบจองห้องประชุมอัตโนมัติ (BU Meeting Room Reservation)
-              </div>
-            </div>
-          `,
-        }),
+            `,
+          }),
+        }).catch(err => console.error(`Failed to send email to admin ${adminEmail}:`, err));
       });
+
+      await Promise.all(adminPromises);
 
       console.log('Booking confirmation emails sent successfully via local proxy');
       return true;
